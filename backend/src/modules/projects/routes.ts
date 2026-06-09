@@ -2,22 +2,14 @@ import { FastifyInstance } from 'fastify';
 import { projectRepository } from './repository';
 import type { CreateProjectInput, UpdateProjectInput } from '../../types/domain';
 
-// ---------------------------------------------------------------------------
-// Request shapes (used for Fastify generic typing)
-// ---------------------------------------------------------------------------
 type CreateBody = { name: string; description?: string | null };
 type UpdateBody = { name?: string; description?: string | null };
-type IdParams = { id: string };
+type IdParams  = { id: string };
 
-// ---------------------------------------------------------------------------
-// JSON Schemas (Fastify validates request body/params before handler runs)
-// ---------------------------------------------------------------------------
 const idParamsSchema = {
   type: 'object',
   required: ['id'],
-  properties: {
-    id: { type: 'string' },
-  },
+  properties: { id: { type: 'string' } },
 } as const;
 
 const createBodySchema = {
@@ -40,16 +32,11 @@ const updateBodySchema = {
   },
 } as const;
 
-// ---------------------------------------------------------------------------
-// Routes
-// ---------------------------------------------------------------------------
 export async function projectRoutes(app: FastifyInstance): Promise<void> {
   // GET /api/projects
-  app.get('/', async () => {
-    return projectRepository.findAll();
-  });
+  app.get('/', async () => projectRepository.findAll());
 
-  // POST /api/projects  →  201
+  // POST /api/projects → 201
   app.post<{ Body: CreateBody }>(
     '/',
     { schema: { body: createBodySchema } },
@@ -58,8 +45,7 @@ export async function projectRoutes(app: FastifyInstance): Promise<void> {
         name:        request.body.name,
         description: request.body.description ?? null,
       };
-      const project = projectRepository.create(input);
-      return reply.code(201).send(project);
+      return reply.code(201).send(projectRepository.create(input));
     },
   );
 
@@ -69,9 +55,7 @@ export async function projectRoutes(app: FastifyInstance): Promise<void> {
     { schema: { params: idParamsSchema } },
     async (request) => {
       const project = projectRepository.findById(request.params.id);
-      if (!project) {
-        throw app.httpErrors.notFound(`Project '${request.params.id}' not found`);
-      }
+      if (!project) throw app.httpErrors.notFound(`Project '${request.params.id}' not found`);
       return project;
     },
   );
@@ -83,22 +67,18 @@ export async function projectRoutes(app: FastifyInstance): Promise<void> {
     async (request) => {
       const input: UpdateProjectInput = request.body;
       const project = projectRepository.update(request.params.id, input);
-      if (!project) {
-        throw app.httpErrors.notFound(`Project '${request.params.id}' not found`);
-      }
+      if (!project) throw app.httpErrors.notFound(`Project '${request.params.id}' not found`);
       return project;
     },
   );
 
-  // DELETE /api/projects/:id  →  204
+  // DELETE /api/projects/:id → 204
   app.delete<{ Params: IdParams }>(
     '/:id',
     { schema: { params: idParamsSchema } },
     async (request, reply) => {
       const deleted = projectRepository.delete(request.params.id);
-      if (!deleted) {
-        throw app.httpErrors.notFound(`Project '${request.params.id}' not found`);
-      }
+      if (!deleted) throw app.httpErrors.notFound(`Project '${request.params.id}' not found`);
       return reply.code(204).send();
     },
   );

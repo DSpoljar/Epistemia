@@ -1,10 +1,3 @@
-// ---------------------------------------------------------------------------
-// Domain entities
-// All ids are UUIDs (string). Nullable fields use `| null`.
-// Column names in SQLite are snake_case; these interfaces use camelCase.
-// Repositories are responsible for mapping between the two.
-// ---------------------------------------------------------------------------
-
 export interface Project {
   id: string;
   name: string;
@@ -34,23 +27,14 @@ export interface Cluster {
   description: string | null;
 }
 
-export interface ClaimCluster {
-  claimId: string;
-  clusterId: string;
-}
+export type CreateProjectInput  = Omit<Project, 'id'>;
+export type UpdateProjectInput  = Partial<Omit<Project,  'id'>>;
 
-// ---------------------------------------------------------------------------
-// Input types (id is generated server-side; foreign keys are required)
-// ---------------------------------------------------------------------------
+export type CreatePaperInput    = Omit<Paper, 'id'>;
+export type UpdatePaperInput    = Partial<Omit<Paper,   'id' | 'projectId'>>;
 
-export type CreateProjectInput = Omit<Project, 'id'>;
-export type UpdateProjectInput = Partial<Omit<Project, 'id'>>;
+export type CreateClaimInput    = Omit<Claim, 'id'>;
+export type UpdateClaimInput    = Partial<Omit<Claim,   'id' | 'paperId'>>;
 
-export type CreatePaperInput = Omit<Paper, 'id'>;
-export type UpdatePaperInput = Partial<Omit<Paper, 'id' | 'projectId'>>;
-
-export type CreateClaimInput = Omit<Claim, 'id'>;
-export type UpdateClaimInput = Partial<Omit<Claim, 'id' | 'paperId'>>;
-
-export type CreateClusterInput = Omit<Cluster, 'id'>;
-export type UpdateClusterInput = Partial<Omit<Cluster, 'id' | 'projectId'>>;
+export type CreateClusterInput  = Omit<Cluster, 'id'>;
+export type UpdateClusterInput  = Partial<Omit<Cluster, 'id' | 'projectId'>>;
