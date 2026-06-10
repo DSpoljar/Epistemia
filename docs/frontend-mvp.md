@@ -1,8 +1,8 @@
-# Evidentia Frontend MVP Specification
+# Epistemia Frontend MVP Specification
 
 ## Goal
 
-Build a functional frontend for Evidentia that supports the validated user flow.
+Build a functional frontend for Epistemia that supports the validated user flow.
 
 The frontend should prioritize functionality over polish.
 
