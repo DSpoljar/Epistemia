@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { getDb } from '../../db/database';
-import type { Cluster, Claim, CreateClusterInput, UpdateClusterInput } from '../../types/domain';
+import type { Cluster, Claim, Paper, CreateClusterInput, UpdateClusterInput } from '../../types/domain';
 
 interface ClusterRow {
   id: string;
@@ -87,5 +87,61 @@ export const clusterRepository = {
       WHERE cc.cluster_id = ?
     `).all(clusterId) as unknown as ClaimRow[];
     return rows.map(toClaim);
+  },
+
+  findComparison(clusterId: string): { claims: Claim[]; papers: Paper[] } {
+    interface ComparisonRow {
+      claim_id: string;
+      claim_paper_id: string;
+      claim_text: string;
+      claim_notes: string | null;
+      paper_id: string;
+      paper_project_id: string;
+      title: string;
+      authors: string | null;
+      year: number | null;
+      summary: string | null;
+    }
+
+    const rows = getDb().prepare(`
+      SELECT
+        cl.id        AS claim_id,
+        cl.paper_id  AS claim_paper_id,
+        cl.text      AS claim_text,
+        cl.notes     AS claim_notes,
+        p.id         AS paper_id,
+        p.project_id AS paper_project_id,
+        p.title,
+        p.authors,
+        p.year,
+        p.summary
+      FROM claims cl
+      JOIN claim_clusters cc ON cl.id = cc.claim_id
+      JOIN papers p ON cl.paper_id = p.id
+      WHERE cc.cluster_id = ?
+    `).all(clusterId) as unknown as ComparisonRow[];
+
+    const claims: Claim[] = rows.map(r => ({
+      id: r.claim_id,
+      paperId: r.claim_paper_id,
+      text: r.claim_text,
+      notes: r.claim_notes,
+    }));
+
+    const papersMap = new Map<string, Paper>();
+    for (const r of rows) {
+      if (!papersMap.has(r.paper_id)) {
+        papersMap.set(r.paper_id, {
+          id: r.paper_id,
+          projectId: r.paper_project_id,
+          title: r.title,
+          authors: r.authors,
+          year: r.year,
+          summary: r.summary,
+        });
+      }
+    }
+
+    return { claims, papers: Array.from(papersMap.values()) };
   },
 };

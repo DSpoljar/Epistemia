@@ -110,6 +110,19 @@ export async function clusterRoutes(app: FastifyInstance): Promise<void> {
     },
   );
 
+  // GET /api/clusters/:id/comparison
+  app.get<{ Params: IdParams }>(
+    '/:id/comparison',
+    { schema: { params: idParamsSchema } },
+    async (request) => {
+      const { id } = request.params;
+      const cluster = clusterRepository.findById(id);
+      if (!cluster) throw app.httpErrors.notFound(`Cluster '${id}' not found`);
+      const { claims, papers } = clusterRepository.findComparison(id);
+      return { cluster, claims, papers };
+    },
+  );
+
   // DELETE /api/clusters/:id → 204
   app.delete<{ Params: IdParams }>(
     '/:id',
