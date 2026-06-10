@@ -8,6 +8,12 @@ export async function listProjects(): Promise<Project[]> {
   return res.json();
 }
 
+export async function getProject(id: string): Promise<Project> {
+  const res = await fetch(`${BASE}/projects/${id}`);
+  if (!res.ok) throw new Error('Failed to load project.');
+  return res.json();
+}
+
 export async function createProject(data: { name: string; description?: string | null }): Promise<Project> {
   const res = await fetch(`${BASE}/projects`, {
     method: 'POST',
