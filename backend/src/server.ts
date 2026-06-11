@@ -1,9 +1,11 @@
 import { buildApp } from './app';
 import { config } from './config/env';
 import { runMigrations } from './db/migrate';
+import { runSeed } from './db/seed';
 
 async function start(): Promise<void> {
   runMigrations();
+  runSeed();
 
   const app = buildApp();
 

@@ -82,12 +82,20 @@ export default function ProjectDetail() {
 
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-2xl font-semibold text-gray-900">{project?.name}</h1>
-          <button
-            onClick={() => { setShowForm(f => !f); setFormErrors({}); }}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors text-sm"
-          >
-            {showForm ? 'Cancel' : 'Add Paper'}
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={() => navigate(`/projects/${id}/clusters`)}
+              className="border border-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-100 transition-colors text-sm"
+            >
+              View Clusters
+            </button>
+            <button
+              onClick={() => { setShowForm(f => !f); setFormErrors({}); }}
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors text-sm"
+            >
+              {showForm ? 'Cancel' : 'Add Paper'}
+            </button>
+          </div>
         </div>
 
         {showForm && (

@@ -24,6 +24,12 @@ export async function createPaper(data: {
   return res.json();
 }
 
+export async function getPaper(id: string): Promise<Paper> {
+  const res = await fetch(`${BASE}/papers/${id}`);
+  if (!res.ok) throw new Error('Failed to load paper.');
+  return res.json();
+}
+
 export async function deletePaper(id: string): Promise<void> {
   const res = await fetch(`${BASE}/papers/${id}`, { method: 'DELETE' });
   if (!res.ok) throw new Error('Failed to delete paper.');
