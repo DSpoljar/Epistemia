@@ -1,17 +1,19 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
 import Dashboard from './pages/Dashboard';
 import ProjectDetail from './pages/ProjectDetail';
+import ClaimsView from './pages/ClaimsView';
+import ClustersView from './pages/ClustersView';
+
+const router = createBrowserRouter([
+  { path: '/',                        element: <LandingPage /> },
+  { path: '/projects',                element: <Dashboard /> },
+  { path: '/projects/:id',            element: <ProjectDetail /> },
+  { path: '/projects/:id/clusters',   element: <ClustersView /> },
+  { path: '/papers/:paperId/claims',  element: <ClaimsView /> },
+  { path: '*',                        element: <Navigate to="/" replace /> },
+]);
 
 export default function App() {
-  return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/projects" element={<Dashboard />} />
-        <Route path="/projects/:id" element={<ProjectDetail />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </BrowserRouter>
-  );
+  return <RouterProvider router={router} />;
 }
