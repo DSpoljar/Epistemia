@@ -1,4 +1,4 @@
-import type { Cluster, Claim } from '../types';
+import type { Cluster, Claim, Paper } from '../types';
 
 const BASE = '/api';
 
@@ -52,4 +52,10 @@ export async function assignClaim(clusterId: string, claimId: string): Promise<C
 export async function unassignClaim(clusterId: string, claimId: string): Promise<void> {
   const res = await fetch(`${BASE}/clusters/${clusterId}/claims/${claimId}`, { method: 'DELETE' });
   if (!res.ok) throw new Error('Failed to unassign claim.');
+}
+
+export async function getComparison(clusterId: string): Promise<{ cluster: Cluster; claims: Claim[]; papers: Paper[] }> {
+  const res = await fetch(`${BASE}/clusters/${clusterId}/comparison`);
+  if (!res.ok) throw new Error('Failed to load comparison.');
+  return res.json();
 }
