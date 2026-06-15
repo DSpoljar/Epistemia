@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import type { Project, Cluster } from '../types';
 import { getProject } from '../api/projects';
 import { listClusters, createCluster, deleteCluster } from '../api/clusters';
@@ -123,7 +123,12 @@ export default function ClustersView() {
               <li key={cluster.id} className="bg-white border border-gray-200 rounded p-4">
                 <div className="flex items-start justify-between">
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-gray-900 text-sm">{cluster.name}</p>
+                    <Link
+                      to={`/projects/${id}/clusters/${cluster.id}`}
+                      className="font-medium text-gray-900 text-sm hover:text-blue-600 hover:underline"
+                    >
+                      {cluster.name}
+                    </Link>
                     {cluster.description && (
                       <p className="text-gray-500 text-xs mt-1 leading-relaxed">{cluster.description}</p>
                     )}
