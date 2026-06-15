@@ -5,13 +5,15 @@ import ProjectDetail from './pages/ProjectDetail';
 import ClaimsView from './pages/ClaimsView';
 import ClustersView from './pages/ClustersView';
 import ClusterDetail from './pages/ClusterDetail';
+import ComparisonView from './pages/ComparisonView';
 
 const router = createBrowserRouter([
   { path: '/',                        element: <LandingPage /> },
   { path: '/projects',                element: <Dashboard /> },
   { path: '/projects/:id',            element: <ProjectDetail /> },
   { path: '/projects/:id/clusters',                      element: <ClustersView /> },
-  { path: '/projects/:id/clusters/:clusterId',           element: <ClusterDetail /> },
+  { path: '/projects/:id/clusters/:clusterId',                       element: <ClusterDetail /> },
+  { path: '/projects/:id/clusters/:clusterId/comparison',            element: <ComparisonView /> },
   { path: '/papers/:paperId/claims',  element: <ClaimsView /> },
   { path: '*',                        element: <Navigate to="/" replace /> },
 ]);

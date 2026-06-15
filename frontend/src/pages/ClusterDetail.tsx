@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import type { Cluster, Claim, Paper } from '../types';
 import { getCluster, listClusterClaims, assignClaim, unassignClaim } from '../api/clusters';
 import { listPapers } from '../api/papers';
@@ -83,10 +83,20 @@ export default function ClusterDetail() {
 
         {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
-        <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-gray-900">{cluster?.name}</h1>
-          {cluster?.description && (
-            <p className="text-gray-500 text-sm mt-1">{cluster.description}</p>
+        <div className="flex items-start justify-between mb-8">
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-900">{cluster?.name}</h1>
+            {cluster?.description && (
+              <p className="text-gray-500 text-sm mt-1">{cluster.description}</p>
+            )}
+          </div>
+          {assignedClaims.length > 0 && (
+            <Link
+              to={`/projects/${id}/clusters/${clusterId}/comparison`}
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors text-sm shrink-0 ml-4"
+            >
+              Compare
+            </Link>
           )}
         </div>
 
