@@ -2,6 +2,21 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Project } from '../types';
 import { listProjects, createProject, deleteProject } from '../api/projects';
+import { createPaper, extractFromPdf } from '../api/papers';
+
+interface PaperDraft {
+  key: string;
+  title: string;
+  authors: string;
+  year: string;
+  tempId: string | null;
+  extracting: boolean;
+  extractNote: string | null;
+}
+
+function emptyDraft(): PaperDraft {
+  return { key: Math.random().toString(36).slice(2), title: '', authors: '', year: '', tempId: null, extracting: false, extractNote: null };
+}
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -14,6 +29,7 @@ export default function Dashboard() {
   const [description, setDescription] = useState('');
   const [nameError, setNameError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [paperDrafts, setPaperDrafts] = useState<PaperDraft[]>([]);
 
   useEffect(() => {
     listProjects()
@@ -22,20 +38,54 @@ export default function Dashboard() {
       .finally(() => setLoading(false));
   }, []);
 
+  function resetForm() {
+    setName(''); setDescription(''); setNameError(''); setPaperDrafts([]);
+  }
+
+  function updateDraft(key: string, updates: Partial<PaperDraft>) {
+    setPaperDrafts(prev => prev.map(d => d.key === key ? { ...d, ...updates } : d));
+  }
+
+  async function handleDraftExtract(key: string, file: File) {
+    updateDraft(key, { extracting: true, extractNote: null });
+    try {
+      const meta = await extractFromPdf(file);
+      const filled = [meta.title, meta.authors, meta.year].filter(Boolean).length;
+      updateDraft(key, {
+        tempId: meta.tempId,
+        ...(meta.title   ? { title:   meta.title }        : {}),
+        ...(meta.authors ? { authors: meta.authors }      : {}),
+        ...(meta.year    ? { year:    String(meta.year) } : {}),
+        extractNote: filled > 0 ? 'Fields pre-filled — verify before saving.' : 'PDF attached — no metadata found.',
+        extracting: false,
+      });
+    } catch (e: unknown) {
+      updateDraft(key, { extracting: false, extractNote: e instanceof Error ? e.message : 'Failed to read PDF.' });
+    }
+  }
+
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim()) {
-      setNameError('Project name is required.');
-      return;
-    }
+    if (!name.trim()) { setNameError('Project name is required.'); return; }
     setNameError('');
     setSubmitting(true);
     try {
       const project = await createProject({ name: name.trim(), description: description.trim() || null });
+      for (const draft of paperDrafts) {
+        if (!draft.title.trim()) continue;
+        await createPaper({
+          projectId: project.id,
+          title:     draft.title.trim(),
+          authors:   draft.authors.trim() || null,
+          year:      draft.year ? parseInt(draft.year, 10) : null,
+          summary:   null,
+          ...(draft.tempId ? { tempId: draft.tempId } : {}),
+        });
+      }
       setProjects(prev => [...prev, project]);
-      setName('');
-      setDescription('');
+      resetForm();
       setShowForm(false);
+      navigate(`/projects/${project.id}`);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to create project.');
     } finally {
@@ -58,7 +108,7 @@ export default function Dashboard() {
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-2xl font-semibold text-gray-900">Projects</h1>
           <button
-            onClick={() => { setShowForm(f => !f); setNameError(''); }}
+            onClick={() => { setShowForm(f => !f); if (showForm) resetForm(); }}
             className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors text-sm"
           >
             {showForm ? 'Cancel' : 'New Project'}
@@ -68,6 +118,7 @@ export default function Dashboard() {
         {showForm && (
           <form onSubmit={handleCreate} className="bg-white border border-gray-200 rounded p-5 mb-6">
             <h2 className="text-base font-medium text-gray-800 mb-4">Create Project</h2>
+
             <div className="mb-3">
               <label className="block text-sm text-gray-700 mb-1">Name *</label>
               <input
@@ -79,7 +130,8 @@ export default function Dashboard() {
               />
               {nameError && <p className="text-red-500 text-xs mt-1">{nameError}</p>}
             </div>
-            <div className="mb-4">
+
+            <div className="mb-5">
               <label className="block text-sm text-gray-700 mb-1">Description</label>
               <textarea
                 value={description}
@@ -89,19 +141,93 @@ export default function Dashboard() {
                 placeholder="Optional"
               />
             </div>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700 disabled:opacity-50 transition-colors"
-            >
-              {submitting ? 'Creating...' : 'Create Project'}
-            </button>
+
+            <div className="border-t border-gray-100 pt-5">
+              <h3 className="text-sm font-medium text-gray-700 mb-3">Papers</h3>
+
+              {paperDrafts.length > 0 && (
+                <div className="space-y-3 mb-3">
+                  {paperDrafts.map(draft => (
+                    <div key={draft.key} className="border border-gray-200 rounded p-4 bg-gray-50">
+                      <div className="flex gap-2 mb-2">
+                        <input
+                          type="text"
+                          value={draft.title}
+                          onChange={e => updateDraft(draft.key, { title: e.target.value })}
+                          placeholder="Title *"
+                          className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 bg-white"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setPaperDrafts(prev => prev.filter(d => d.key !== draft.key))}
+                          className="text-red-500 text-xs hover:underline shrink-0"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                      <div className="flex gap-2 mb-2">
+                        <input
+                          type="text"
+                          value={draft.authors}
+                          onChange={e => updateDraft(draft.key, { authors: e.target.value })}
+                          placeholder="Authors"
+                          className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 bg-white"
+                        />
+                        <input
+                          type="number"
+                          value={draft.year}
+                          onChange={e => updateDraft(draft.key, { year: e.target.value })}
+                          placeholder="Year"
+                          className="w-24 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 bg-white"
+                        />
+                      </div>
+                      <div className="border border-dashed border-gray-300 rounded px-3 py-2 bg-white">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <span className="text-xs text-gray-600">
+                            {draft.extracting ? 'Reading PDF…' : draft.tempId ? 'PDF attached ✓' : 'Attach PDF (optional)'}
+                          </span>
+                          <input
+                            type="file"
+                            accept="application/pdf"
+                            className="hidden"
+                            disabled={draft.extracting}
+                            onChange={e => { const f = e.target.files?.[0]; if (f) handleDraftExtract(draft.key, f); e.target.value = ''; }}
+                          />
+                          {!draft.extracting && (
+                            <span className="text-xs bg-gray-50 border border-gray-300 rounded px-2 py-0.5 hover:bg-gray-100 transition-colors">
+                              {draft.tempId ? 'Replace' : 'Choose PDF'}
+                            </span>
+                          )}
+                        </label>
+                        {draft.extractNote && <p className="text-xs mt-1 text-gray-500">{draft.extractNote}</p>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setPaperDrafts(prev => [...prev, emptyDraft()])}
+                className="text-blue-600 text-sm hover:underline"
+              >
+                + Add Paper
+              </button>
+            </div>
+
+            <div className="mt-5">
+              <button
+                type="submit"
+                disabled={submitting}
+                className="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              >
+                {submitting ? 'Creating...' : 'Create Project'}
+              </button>
+            </div>
           </form>
         )}
 
-        {error && (
-          <p className="text-red-500 text-sm mb-4">{error}</p>
-        )}
+        {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
         {loading ? (
           <p className="text-gray-500 text-sm">Loading...</p>

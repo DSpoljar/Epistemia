@@ -14,6 +14,7 @@ export async function createPaper(data: {
   authors?: string | null;
   year?: number | null;
   summary?: string | null;
+  tempId?: string;
 }): Promise<Paper> {
   const res = await fetch(`${BASE}/papers`, {
     method: 'POST',
@@ -21,6 +22,14 @@ export async function createPaper(data: {
     body: JSON.stringify(data),
   });
   if (!res.ok) throw new Error('Failed to create paper.');
+  return res.json();
+}
+
+export async function extractFromPdf(file: File): Promise<{ tempId: string; title: string | null; authors: string | null; year: number | null }> {
+  const form = new FormData();
+  form.append('file', file);
+  const res = await fetch(`${BASE}/papers/extract`, { method: 'POST', body: form });
+  if (!res.ok) throw new Error('Failed to extract PDF metadata.');
   return res.json();
 }
 
@@ -33,4 +42,12 @@ export async function getPaper(id: string): Promise<Paper> {
 export async function deletePaper(id: string): Promise<void> {
   const res = await fetch(`${BASE}/papers/${id}`, { method: 'DELETE' });
   if (!res.ok) throw new Error('Failed to delete paper.');
+}
+
+export async function uploadPdf(id: string, file: File): Promise<Paper> {
+  const form = new FormData();
+  form.append('file', file);
+  const res = await fetch(`${BASE}/papers/${id}/pdf`, { method: 'POST', body: form });
+  if (!res.ok) throw new Error('Failed to upload PDF.');
+  return res.json();
 }

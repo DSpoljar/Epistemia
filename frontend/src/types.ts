@@ -11,6 +11,7 @@ export interface Paper {
   authors: string | null;
   year: number | null;
   summary: string | null;
+  pdfPath: string | null;
 }
 
 export interface Claim {

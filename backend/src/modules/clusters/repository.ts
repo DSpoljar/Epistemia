@@ -138,6 +138,7 @@ export const clusterRepository = {
           authors: r.authors,
           year: r.year,
           summary: r.summary,
+          pdfPath: null,
         });
       }
     }

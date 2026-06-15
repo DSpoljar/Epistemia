@@ -11,6 +11,7 @@ export interface IPaperRepository {
   findById(id: string): Paper | null;
   create(input: CreatePaperInput): Paper;
   update(id: string, input: UpdatePaperInput): Paper | null;
+  setPdfPath(id: string, pdfPath: string): void;
   delete(id: string): boolean;
 }
 
@@ -22,6 +23,7 @@ interface PaperRow {
   authors: string | null;
   year: number | null;
   summary: string | null;
+  pdf_path: string | null;
 }
 
 function toPaper(row: PaperRow): Paper {
@@ -32,6 +34,7 @@ function toPaper(row: PaperRow): Paper {
     authors: row.authors,
     year: row.year,
     summary: row.summary,
+    pdfPath: row.pdf_path ?? null,
   };
 }
 
@@ -68,6 +71,7 @@ export const paperRepository: IPaperRepository = {
       authors: input.authors ?? null,
       year: input.year ?? null,
       summary: input.summary ?? null,
+      pdfPath: null,
     };
   },
 
@@ -81,6 +85,10 @@ export const paperRepository: IPaperRepository = {
       )
       .run(updated.title, updated.authors, updated.year, updated.summary, id);
     return updated;
+  },
+
+  setPdfPath(id, pdfPath) {
+    getDb().prepare('UPDATE papers SET pdf_path = ? WHERE id = ?').run(pdfPath, id);
   },
 
   delete(id) {

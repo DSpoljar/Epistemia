@@ -11,6 +11,7 @@ export interface Paper {
   authors: string | null;
   year: number | null;
   summary: string | null;
+  pdfPath: string | null;
 }
 
 export interface Claim {
@@ -30,7 +31,7 @@ export interface Cluster {
 export type CreateProjectInput  = Omit<Project, 'id'>;
 export type UpdateProjectInput  = Partial<Omit<Project,  'id'>>;
 
-export type CreatePaperInput    = Omit<Paper, 'id'>;
+export type CreatePaperInput    = Omit<Paper, 'id' | 'pdfPath'>;
 export type UpdatePaperInput    = Partial<Omit<Paper,   'id' | 'projectId'>>;
 
 export type CreateClaimInput    = Omit<Claim, 'id'>;
