@@ -42,6 +42,18 @@ export default function ProjectDetail() {
   const [summaryDrafts, setSummaryDrafts]   = useState<Map<string, string>>(new Map());
   const [savingPaperId, setSavingPaperId]   = useState<string | null>(null);
 
+  // Edit paper
+  const [editingPaperId, setEditingPaperId] = useState<string | null>(null);
+  const [editTitle, setEditTitle]           = useState('');
+  const [editAuthors, setEditAuthors]       = useState('');
+  const [editYear, setEditYear]             = useState('');
+  const [editSaving, setEditSaving]         = useState(false);
+  const [editError, setEditError]           = useState('');
+
+  // Drag & drop
+  const [addFormDragging, setAddFormDragging] = useState(false);
+  const [cardDraggingId, setCardDraggingId]   = useState<string | null>(null);
+
   // Claims tab
   const [claimFormPaperId, setClaimFormPaperId] = useState<string | null>(null);
   const [claimType, setClaimType]   = useState<ClaimType>('hypothesis');
@@ -135,6 +147,47 @@ export default function ProjectDetail() {
     }
   }
 
+  function openEdit(paper: Paper) {
+    setEditingPaperId(paper.id);
+    setEditTitle(paper.title);
+    setEditAuthors(paper.authors ?? '');
+    setEditYear(paper.year ? String(paper.year) : '');
+    setEditError('');
+  }
+
+  async function handleSaveEdit(e: React.FormEvent, paperId: string) {
+    e.preventDefault();
+    if (!editTitle.trim()) { setEditError('Title is required.'); return; }
+    setEditSaving(true);
+    try {
+      const updated = await updatePaper(paperId, {
+        title:   editTitle.trim(),
+        authors: editAuthors.trim() || null,
+        year:    editYear ? parseInt(editYear, 10) : null,
+      });
+      setPapers(prev => prev.map(p => p.id === paperId ? updated : p));
+      setEditingPaperId(null);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Failed to update paper.');
+    } finally {
+      setEditSaving(false);
+    }
+  }
+
+  function handleAddFormDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setAddFormDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type === 'application/pdf') handleExtract(file);
+  }
+
+  function handleCardDrop(e: React.DragEvent, paperId: string) {
+    e.preventDefault();
+    setCardDraggingId(null);
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type === 'application/pdf') handlePdfUpload(paperId, file);
+  }
+
   async function handlePdfUpload(paperId: string, file: File) {
     try {
       const updated = await uploadPdf(paperId, file);
@@ -214,10 +267,15 @@ export default function ProjectDetail() {
         {showAddPaper && (
           <form onSubmit={handleAddPaper} className="bg-white border border-gray-200 rounded p-5 mb-6">
             <h2 className="text-base font-medium text-gray-800 mb-4">Add Paper</h2>
-            <div className="mb-4 border border-dashed border-gray-300 rounded px-4 py-3 bg-gray-50">
+            <div
+              className={`mb-4 border-2 border-dashed rounded px-4 py-3 transition-colors ${addFormDragging ? 'border-blue-400 bg-blue-50' : 'border-gray-300 bg-gray-50'}`}
+              onDragOver={e => { e.preventDefault(); setAddFormDragging(true); }}
+              onDragLeave={() => setAddFormDragging(false)}
+              onDrop={handleAddFormDrop}
+            >
               <label className="flex items-center gap-2 cursor-pointer">
                 <span className="text-sm text-gray-600">
-                  {extracting ? 'Reading PDF…' : tempId ? 'PDF attached ✓' : 'Attach PDF (optional)'}
+                  {extracting ? 'Reading PDF…' : tempId ? 'PDF attached ✓' : addFormDragging ? 'Drop PDF here…' : 'Attach PDF (optional)'}
                 </span>
                 <input type="file" accept="application/pdf" className="hidden" disabled={extracting}
                   onChange={e => { const f = e.target.files?.[0]; if (f) handleExtract(f); e.target.value = ''; }} />
@@ -228,7 +286,7 @@ export default function ProjectDetail() {
                 )}
               </label>
               {extractNote && <p className="text-xs mt-2 text-gray-500">{extractNote}</p>}
-              {!extractNote && !tempId && <p className="text-xs mt-1 text-gray-400">Auto-fills fields if metadata is found.</p>}
+              {!extractNote && !tempId && <p className="text-xs mt-1 text-gray-400">Drop a PDF here or click Choose — auto-fills fields if metadata found.</p>}
             </div>
             <div className="mb-3">
               <label className="block text-sm text-gray-700 mb-1">Title *</label>
@@ -260,31 +318,73 @@ export default function ProjectDetail() {
           <p className="text-gray-500 text-sm">No papers yet. Add one to get started.</p>
         ) : (
           <ul className="space-y-3">
-            {papers.map(paper => (
-              <li key={paper.id} className="bg-white border border-gray-200 rounded p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-gray-900 text-sm">{paper.title}</p>
-                    {(paper.authors || paper.year) && (
-                      <p className="text-gray-500 text-xs mt-0.5">{[paper.authors, paper.year].filter(Boolean).join(' · ')}</p>
-                    )}
-                  </div>
-                  <div className="flex gap-3 ml-4 shrink-0 items-start">
-                    {paper.pdfPath ? (
-                      <a href={`/api/papers/${paper.id}/pdf`} target="_blank" rel="noreferrer"
-                        className="text-blue-600 text-xs hover:underline">Open PDF</a>
-                    ) : (
-                      <label className="text-gray-500 text-xs hover:underline cursor-pointer">
-                        Attach PDF
-                        <input type="file" accept="application/pdf" className="hidden"
-                          onChange={e => { const f = e.target.files?.[0]; if (f) handlePdfUpload(paper.id, f); e.target.value = ''; }} />
-                      </label>
-                    )}
-                    <button onClick={() => handleDeletePaper(paper.id)} className="text-red-500 text-xs hover:underline">Delete</button>
-                  </div>
-                </div>
-              </li>
-            ))}
+            {papers.map(paper => {
+              const isEditing = editingPaperId === paper.id;
+              return (
+                <li key={paper.id} className="bg-white border border-gray-200 rounded p-4">
+                  {isEditing ? (
+                    <form onSubmit={e => handleSaveEdit(e, paper.id)}>
+                      <div className="mb-3">
+                        <label className="block text-sm text-gray-700 mb-1">Title *</label>
+                        <input type="text" value={editTitle} onChange={e => setEditTitle(e.target.value)} autoFocus
+                          className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500" />
+                        {editError && <p className="text-red-500 text-xs mt-1">{editError}</p>}
+                      </div>
+                      <div className="mb-3">
+                        <label className="block text-sm text-gray-700 mb-1">Authors</label>
+                        <input type="text" value={editAuthors} onChange={e => setEditAuthors(e.target.value)}
+                          className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500" />
+                      </div>
+                      <div className="mb-4">
+                        <label className="block text-sm text-gray-700 mb-1">Year</label>
+                        <input type="number" value={editYear} onChange={e => setEditYear(e.target.value)}
+                          className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500" />
+                      </div>
+                      <div className="flex gap-3">
+                        <button type="submit" disabled={editSaving}
+                          className="bg-blue-600 text-white px-4 py-1.5 rounded text-sm hover:bg-blue-700 disabled:opacity-50 transition-colors">
+                          {editSaving ? 'Saving…' : 'Save'}
+                        </button>
+                        <button type="button" onClick={() => setEditingPaperId(null)}
+                          className="text-gray-500 text-sm hover:underline">
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
+                  ) : (
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-gray-900 text-sm">{paper.title}</p>
+                        {(paper.authors || paper.year) && (
+                          <p className="text-gray-500 text-xs mt-0.5">{[paper.authors, paper.year].filter(Boolean).join(' · ')}</p>
+                        )}
+                      </div>
+                      <div className="flex gap-3 ml-4 shrink-0 items-start">
+                        {paper.pdfPath ? (
+                          <a href={`/api/papers/${paper.id}/pdf`} target="_blank" rel="noreferrer"
+                            className="text-blue-600 text-xs hover:underline">Open PDF</a>
+                        ) : (
+                          <div
+                            className={`border border-dashed rounded px-2 py-1 transition-colors ${cardDraggingId === paper.id ? 'border-blue-400 bg-blue-50' : 'border-gray-300'}`}
+                            onDragOver={e => { e.preventDefault(); setCardDraggingId(paper.id); }}
+                            onDragLeave={() => setCardDraggingId(null)}
+                            onDrop={e => handleCardDrop(e, paper.id)}
+                          >
+                            <label className="text-gray-500 text-xs hover:underline cursor-pointer">
+                              {cardDraggingId === paper.id ? 'Drop PDF…' : 'Attach PDF'}
+                              <input type="file" accept="application/pdf" className="hidden"
+                                onChange={e => { const f = e.target.files?.[0]; if (f) handlePdfUpload(paper.id, f); e.target.value = ''; }} />
+                            </label>
+                          </div>
+                        )}
+                        <button onClick={() => openEdit(paper)} className="text-blue-600 text-xs hover:underline">Edit</button>
+                        <button onClick={() => handleDeletePaper(paper.id)} className="text-red-500 text-xs hover:underline">Delete</button>
+                      </div>
+                    </div>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
