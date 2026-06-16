@@ -14,11 +14,15 @@ export interface Paper {
   pdfPath: string | null;
 }
 
+export type ClaimType = 'hypothesis' | 'limitation' | 'methodology' | 'implication';
+
 export interface Claim {
   id: string;
   paperId: string;
   text: string;
   notes: string | null;
+  type: ClaimType | null;
+  pageRef: string | null;
 }
 
 export interface Cluster {

@@ -38,6 +38,16 @@ export async function getPaper(id: string): Promise<Paper> {
   return res.json();
 }
 
+export async function updatePaper(id: string, data: { summary?: string | null }): Promise<Paper> {
+  const res = await apiFetch(`/papers/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Failed to update paper.');
+  return res.json();
+}
+
 export async function deletePaper(id: string): Promise<void> {
   const res = await apiFetch(`/papers/${id}`, { method: 'DELETE' });
   if (!res.ok) throw new Error('Failed to delete paper.');

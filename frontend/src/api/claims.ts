@@ -11,6 +11,8 @@ export async function createClaim(data: {
   paperId: string;
   text: string;
   notes?: string | null;
+  type?: import('../types').ClaimType | null;
+  pageRef?: string | null;
 }): Promise<Claim> {
   const res = await apiFetch('/claims', {
     method: 'POST',

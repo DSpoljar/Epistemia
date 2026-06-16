@@ -73,6 +73,15 @@ export function runSeed(): void {
       ('${CLAIM_2B_ID}', '${CLUSTER_2_ID}');
   `);
 
+  db.exec(`
+    UPDATE claims SET type = 'hypothesis',  page_ref = 'p. 1354' WHERE id = '${CLAIM_1A_ID}';
+    UPDATE claims SET type = 'hypothesis',  page_ref = 'p. 1356' WHERE id = '${CLAIM_1B_ID}';
+    UPDATE claims SET type = 'methodology', page_ref = 'p. 1678' WHERE id = '${CLAIM_2A_ID}';
+    UPDATE claims SET type = 'implication', page_ref = 'p. 1680' WHERE id = '${CLAIM_2B_ID}';
+    UPDATE claims SET type = 'hypothesis',  page_ref = 'p. 1426' WHERE id = '${CLAIM_3A_ID}';
+    UPDATE claims SET type = 'limitation',  page_ref = 'p. 1427' WHERE id = '${CLAIM_3B_ID}';
+  `);
+
   const existingAdmin = db.prepare('SELECT id FROM users WHERE id = ?').get('admin-user-001');
   if (!existingAdmin) {
     const hash = bcrypt.hashSync(config.adminPassword, 10);

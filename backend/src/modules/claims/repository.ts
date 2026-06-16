@@ -1,16 +1,25 @@
 import { randomUUID } from 'node:crypto';
 import { getDb } from '../../db/database';
-import type { Claim, CreateClaimInput, UpdateClaimInput } from '../../types/domain';
+import type { Claim, ClaimType, CreateClaimInput, UpdateClaimInput } from '../../types/domain';
 
 interface ClaimRow {
   id: string;
   paper_id: string;
   text: string;
   notes: string | null;
+  type: string | null;
+  page_ref: string | null;
 }
 
 function toClaim(row: ClaimRow): Claim {
-  return { id: row.id, paperId: row.paper_id, text: row.text, notes: row.notes };
+  return {
+    id: row.id,
+    paperId: row.paper_id,
+    text: row.text,
+    notes: row.notes,
+    type: row.type as ClaimType | null,
+    pageRef: row.page_ref,
+  };
 }
 
 export const claimRepository = {
@@ -26,9 +35,9 @@ export const claimRepository = {
   create(input: CreateClaimInput): Claim {
     const id = randomUUID();
     getDb()
-      .prepare('INSERT INTO claims (id, paper_id, text, notes) VALUES (?, ?, ?, ?)')
-      .run(id, input.paperId, input.text, input.notes ?? null);
-    return { id, paperId: input.paperId, text: input.text, notes: input.notes ?? null };
+      .prepare('INSERT INTO claims (id, paper_id, text, notes, type, page_ref) VALUES (?, ?, ?, ?, ?, ?)')
+      .run(id, input.paperId, input.text, input.notes ?? null, input.type ?? null, input.pageRef ?? null);
+    return { id, paperId: input.paperId, text: input.text, notes: input.notes ?? null, type: input.type ?? null, pageRef: input.pageRef ?? null };
   },
 
   update(id: string, input: UpdateClaimInput): Claim | null {
@@ -36,8 +45,8 @@ export const claimRepository = {
     if (!existing) return null;
     const updated: Claim = { ...existing, ...input };
     getDb()
-      .prepare('UPDATE claims SET text = ?, notes = ? WHERE id = ?')
-      .run(updated.text, updated.notes, id);
+      .prepare('UPDATE claims SET text = ?, notes = ?, type = ?, page_ref = ? WHERE id = ?')
+      .run(updated.text, updated.notes, updated.type, updated.pageRef, id);
     return updated;
   },
 

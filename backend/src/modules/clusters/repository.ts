@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { getDb } from '../../db/database';
-import type { Cluster, Claim, Paper, CreateClusterInput, UpdateClusterInput } from '../../types/domain';
+import type { Cluster, Claim, ClaimType, Paper, CreateClusterInput, UpdateClusterInput } from '../../types/domain';
 
 interface ClusterRow {
   id: string;
@@ -9,12 +9,13 @@ interface ClusterRow {
   description: string | null;
 }
 
-// Used for JOIN queries that return claim columns
 interface ClaimRow {
   id: string;
   paper_id: string;
   text: string;
   notes: string | null;
+  type: string | null;
+  page_ref: string | null;
 }
 
 function toCluster(row: ClusterRow): Cluster {
@@ -22,7 +23,7 @@ function toCluster(row: ClusterRow): Cluster {
 }
 
 function toClaim(row: ClaimRow): Claim {
-  return { id: row.id, paperId: row.paper_id, text: row.text, notes: row.notes };
+  return { id: row.id, paperId: row.paper_id, text: row.text, notes: row.notes, type: row.type as ClaimType | null, pageRef: row.page_ref };
 }
 
 export const clusterRepository = {
@@ -95,6 +96,8 @@ export const clusterRepository = {
       claim_paper_id: string;
       claim_text: string;
       claim_notes: string | null;
+      claim_type: string | null;
+      claim_page_ref: string | null;
       paper_id: string;
       paper_project_id: string;
       title: string;
@@ -109,6 +112,8 @@ export const clusterRepository = {
         cl.paper_id  AS claim_paper_id,
         cl.text      AS claim_text,
         cl.notes     AS claim_notes,
+        cl.type      AS claim_type,
+        cl.page_ref  AS claim_page_ref,
         p.id         AS paper_id,
         p.project_id AS paper_project_id,
         p.title,
@@ -126,6 +131,8 @@ export const clusterRepository = {
       paperId: r.claim_paper_id,
       text: r.claim_text,
       notes: r.claim_notes,
+      type: r.claim_type as ClaimType | null,
+      pageRef: r.claim_page_ref,
     }));
 
     const papersMap = new Map<string, Paper>();

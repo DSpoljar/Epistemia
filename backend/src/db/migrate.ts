@@ -3,8 +3,9 @@ import { getDb } from './database';
 export function runMigrations(): void {
   const db = getDb();
 
-  // Add pdf_path to existing papers table — no-op if already present
   try { db.exec('ALTER TABLE papers ADD COLUMN pdf_path TEXT'); } catch { /* already exists */ }
+  try { db.exec('ALTER TABLE claims ADD COLUMN type TEXT'); } catch { /* already exists */ }
+  try { db.exec('ALTER TABLE claims ADD COLUMN page_ref TEXT'); } catch { /* already exists */ }
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS projects (
