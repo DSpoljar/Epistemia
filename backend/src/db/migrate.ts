@@ -41,5 +41,11 @@ export function runMigrations(): void {
       cluster_id TEXT NOT NULL REFERENCES clusters(id) ON DELETE CASCADE,
       PRIMARY KEY (claim_id, cluster_id)
     );
+
+    CREATE TABLE IF NOT EXISTS users (
+      id            TEXT PRIMARY KEY,
+      email         TEXT NOT NULL UNIQUE,
+      password_hash TEXT NOT NULL
+    );
   `);
 }

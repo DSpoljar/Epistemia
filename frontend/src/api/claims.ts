@@ -1,9 +1,8 @@
 import type { Claim } from '../types';
-
-const BASE = '/api';
+import { apiFetch } from './client';
 
 export async function listClaims(paperId: string): Promise<Claim[]> {
-  const res = await fetch(`${BASE}/claims?paperId=${paperId}`);
+  const res = await apiFetch(`/claims?paperId=${paperId}`);
   if (!res.ok) throw new Error('Failed to load claims.');
   return res.json();
 }
@@ -13,7 +12,7 @@ export async function createClaim(data: {
   text: string;
   notes?: string | null;
 }): Promise<Claim> {
-  const res = await fetch(`${BASE}/claims`, {
+  const res = await apiFetch('/claims', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -23,6 +22,6 @@ export async function createClaim(data: {
 }
 
 export async function deleteClaim(id: string): Promise<void> {
-  const res = await fetch(`${BASE}/claims/${id}`, { method: 'DELETE' });
+  const res = await apiFetch(`/claims/${id}`, { method: 'DELETE' });
   if (!res.ok) throw new Error('Failed to delete claim.');
 }

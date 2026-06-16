@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import type { Project } from '../types';
 import { listProjects, createProject, deleteProject } from '../api/projects';
 import { createPaper, extractFromPdf } from '../api/papers';
+import { logout } from '../api/auth';
 
 interface PaperDraft {
   key: string;
@@ -107,12 +108,20 @@ export default function Dashboard() {
       <div className="max-w-2xl mx-auto px-6 py-10">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-2xl font-semibold text-gray-900">Projects</h1>
-          <button
-            onClick={() => { setShowForm(f => !f); if (showForm) resetForm(); }}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors text-sm"
-          >
-            {showForm ? 'Cancel' : 'New Project'}
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => { setShowForm(f => !f); if (showForm) resetForm(); }}
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors text-sm"
+            >
+              {showForm ? 'Cancel' : 'New Project'}
+            </button>
+            <button
+              onClick={logout}
+              className="border border-gray-300 text-gray-600 px-4 py-2 rounded hover:bg-gray-50 transition-colors text-sm"
+            >
+              Sign out
+            </button>
+          </div>
         </div>
 
         {showForm && (

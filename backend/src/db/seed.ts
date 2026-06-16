@@ -1,4 +1,6 @@
 import { getDb } from './database';
+import bcrypt from 'bcryptjs';
+import { config } from '../config/env';
 
 const PROJECT_ID  = 'seed-project-001';
 const PAPER_1_ID  = 'seed-paper-001';
@@ -70,4 +72,10 @@ export function runSeed(): void {
       ('${CLAIM_2A_ID}', '${CLUSTER_2_ID}'),
       ('${CLAIM_2B_ID}', '${CLUSTER_2_ID}');
   `);
+
+  const existingAdmin = db.prepare('SELECT id FROM users WHERE id = ?').get('admin-user-001');
+  if (!existingAdmin) {
+    const hash = bcrypt.hashSync(config.adminPassword, 10);
+    db.prepare('INSERT INTO users (id, email, password_hash) VALUES (?, ?, ?)').run('admin-user-001', config.adminEmail, hash);
+  }
 }

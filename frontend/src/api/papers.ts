@@ -1,9 +1,8 @@
 import type { Paper } from '../types';
-
-const BASE = '/api';
+import { apiFetch } from './client';
 
 export async function listPapers(projectId: string): Promise<Paper[]> {
-  const res = await fetch(`${BASE}/papers?projectId=${projectId}`);
+  const res = await apiFetch(`/papers?projectId=${projectId}`);
   if (!res.ok) throw new Error('Failed to load papers.');
   return res.json();
 }
@@ -16,7 +15,7 @@ export async function createPaper(data: {
   summary?: string | null;
   tempId?: string;
 }): Promise<Paper> {
-  const res = await fetch(`${BASE}/papers`, {
+  const res = await apiFetch('/papers', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -28,26 +27,26 @@ export async function createPaper(data: {
 export async function extractFromPdf(file: File): Promise<{ tempId: string; title: string | null; authors: string | null; year: number | null }> {
   const form = new FormData();
   form.append('file', file);
-  const res = await fetch(`${BASE}/papers/extract`, { method: 'POST', body: form });
+  const res = await apiFetch('/papers/extract', { method: 'POST', body: form });
   if (!res.ok) throw new Error('Failed to extract PDF metadata.');
   return res.json();
 }
 
 export async function getPaper(id: string): Promise<Paper> {
-  const res = await fetch(`${BASE}/papers/${id}`);
+  const res = await apiFetch(`/papers/${id}`);
   if (!res.ok) throw new Error('Failed to load paper.');
   return res.json();
 }
 
 export async function deletePaper(id: string): Promise<void> {
-  const res = await fetch(`${BASE}/papers/${id}`, { method: 'DELETE' });
+  const res = await apiFetch(`/papers/${id}`, { method: 'DELETE' });
   if (!res.ok) throw new Error('Failed to delete paper.');
 }
 
 export async function uploadPdf(id: string, file: File): Promise<Paper> {
   const form = new FormData();
   form.append('file', file);
-  const res = await fetch(`${BASE}/papers/${id}/pdf`, { method: 'POST', body: form });
+  const res = await apiFetch(`/papers/${id}/pdf`, { method: 'POST', body: form });
   if (!res.ok) throw new Error('Failed to upload PDF.');
   return res.json();
 }

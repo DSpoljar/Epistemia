@@ -6,16 +6,24 @@ import ClaimsView from './pages/ClaimsView';
 import ClustersView from './pages/ClustersView';
 import ClusterDetail from './pages/ClusterDetail';
 import ComparisonView from './pages/ComparisonView';
+import LoginPage from './pages/LoginPage';
+import { getToken } from './api/client';
+
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  if (!getToken()) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+}
 
 const router = createBrowserRouter([
-  { path: '/',                        element: <LandingPage /> },
-  { path: '/projects',                element: <Dashboard /> },
-  { path: '/projects/:id',            element: <ProjectDetail /> },
-  { path: '/projects/:id/clusters',                      element: <ClustersView /> },
-  { path: '/projects/:id/clusters/:clusterId',                       element: <ClusterDetail /> },
-  { path: '/projects/:id/clusters/:clusterId/comparison',            element: <ComparisonView /> },
-  { path: '/papers/:paperId/claims',  element: <ClaimsView /> },
-  { path: '*',                        element: <Navigate to="/" replace /> },
+  { path: '/login',                                              element: <LoginPage /> },
+  { path: '/',                                                   element: <LandingPage /> },
+  { path: '/projects',                                           element: <ProtectedRoute><Dashboard /></ProtectedRoute> },
+  { path: '/projects/:id',                                       element: <ProtectedRoute><ProjectDetail /></ProtectedRoute> },
+  { path: '/projects/:id/clusters',                              element: <ProtectedRoute><ClustersView /></ProtectedRoute> },
+  { path: '/projects/:id/clusters/:clusterId',                   element: <ProtectedRoute><ClusterDetail /></ProtectedRoute> },
+  { path: '/projects/:id/clusters/:clusterId/comparison',        element: <ProtectedRoute><ComparisonView /></ProtectedRoute> },
+  { path: '/papers/:paperId/claims',                             element: <ProtectedRoute><ClaimsView /></ProtectedRoute> },
+  { path: '*',                                                   element: <Navigate to="/" replace /> },
 ]);
 
 export default function App() {
