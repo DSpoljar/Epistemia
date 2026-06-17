@@ -23,6 +23,20 @@ export async function createClaim(data: {
   return res.json();
 }
 
+export async function updateClaim(id: string, data: {
+  text?: string;
+  type?: import('../types').ClaimType | null;
+  pageRef?: string | null;
+}): Promise<Claim> {
+  const res = await apiFetch(`/claims/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Failed to update claim.');
+  return res.json();
+}
+
 export async function deleteClaim(id: string): Promise<void> {
   const res = await apiFetch(`/claims/${id}`, { method: 'DELETE' });
   if (!res.ok) throw new Error('Failed to delete claim.');
