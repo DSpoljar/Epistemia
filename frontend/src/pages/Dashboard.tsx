@@ -126,6 +126,7 @@ export default function Dashboard() {
   }
 
   async function handleDelete(id: string) {
+    if (!window.confirm('Delete this project and all its papers and claims?')) return;
     try {
       await deleteProject(id);
       setProjects(prev => prev.filter(p => p.id !== id));
@@ -267,7 +268,12 @@ export default function Dashboard() {
           </form>
         )}
 
-        {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+        {error && (
+          <div className="flex items-center justify-between bg-red-50 border border-red-200 rounded px-4 py-2 mb-4">
+            <p className="text-red-600 text-sm">{error}</p>
+            <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600 ml-4 text-lg leading-none">×</button>
+          </div>
+        )}
 
         {loading ? (
           <p className="text-gray-500 text-sm">Loading...</p>
@@ -305,8 +311,8 @@ export default function Dashboard() {
                     </form>
                   ) : (
                     <div className="flex items-start justify-between">
-                      <div>
-                        <p className="font-medium text-gray-900 text-sm">{project.name}</p>
+                      <div className="cursor-pointer" onClick={() => navigate(`/projects/${project.id}`)}>
+                        <p className="font-medium text-gray-900 text-sm hover:text-blue-600 transition-colors">{project.name}</p>
                         {project.description && (
                           <p className="text-gray-500 text-xs mt-1">{project.description}</p>
                         )}

@@ -56,19 +56,21 @@ export default function ProjectDetail() {
 
   // Claims tab — add form
   const [claimFormPaperId, setClaimFormPaperId] = useState<string | null>(null);
-  const [claimType, setClaimType]   = useState<ClaimType>('hypothesis');
-  const [claimText, setClaimText]   = useState('');
+  const [claimType, setClaimType]       = useState<ClaimType>('hypothesis');
+  const [claimText, setClaimText]       = useState('');
+  const [claimNotes, setClaimNotes]     = useState('');
   const [claimPageRef, setClaimPageRef] = useState('');
   const [claimFormError, setClaimFormError] = useState('');
   const [claimSubmitting, setClaimSubmitting] = useState(false);
 
   // Claims tab — edit form
-  const [editingClaimId, setEditingClaimId]     = useState<string | null>(null);
-  const [editClaimText, setEditClaimText]       = useState('');
-  const [editClaimType, setEditClaimType]       = useState<ClaimType>('hypothesis');
-  const [editClaimPageRef, setEditClaimPageRef] = useState('');
-  const [editClaimSaving, setEditClaimSaving]   = useState(false);
-  const [editClaimError, setEditClaimError]     = useState('');
+  const [editingClaimId, setEditingClaimId]       = useState<string | null>(null);
+  const [editClaimText, setEditClaimText]         = useState('');
+  const [editClaimType, setEditClaimType]         = useState<ClaimType>('hypothesis');
+  const [editClaimNotes, setEditClaimNotes]       = useState('');
+  const [editClaimPageRef, setEditClaimPageRef]   = useState('');
+  const [editClaimSaving, setEditClaimSaving]     = useState(false);
+  const [editClaimError, setEditClaimError]       = useState('');
 
   useEffect(() => {
     if (!id) return;
@@ -134,6 +136,7 @@ export default function ProjectDetail() {
   }
 
   async function handleDeletePaper(paperId: string) {
+    if (!window.confirm('Delete this paper and all its claims?')) return;
     try {
       await deletePaper(paperId);
       setPapers(prev => prev.filter(p => p.id !== paperId));
@@ -228,7 +231,7 @@ export default function ProjectDetail() {
 
   function openClaimForm(paperId: string) {
     setClaimFormPaperId(paperId);
-    setClaimType('hypothesis'); setClaimText(''); setClaimPageRef(''); setClaimFormError('');
+    setClaimType('hypothesis'); setClaimText(''); setClaimNotes(''); setClaimPageRef(''); setClaimFormError('');
   }
 
   async function handleAddClaim(e: React.FormEvent) {
@@ -240,12 +243,12 @@ export default function ProjectDetail() {
       const claim = await createClaim({
         paperId: claimFormPaperId!,
         text:    claimText.trim(),
-        notes:   null,
+        notes:   claimNotes.trim() || null,
         type:    claimType,
         pageRef: claimPageRef.trim() || null,
       });
       addClaimToState(claim);
-      setClaimText(''); setClaimPageRef(''); setClaimFormPaperId(null);
+      setClaimText(''); setClaimNotes(''); setClaimPageRef(''); setClaimFormPaperId(null);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to add claim.');
     } finally {
@@ -254,6 +257,7 @@ export default function ProjectDetail() {
   }
 
   async function handleDeleteClaim(claimId: string, paperId: string) {
+    if (!window.confirm('Delete this claim?')) return;
     try {
       await deleteClaim(claimId);
       removeClaimFromState(claimId, paperId);
@@ -266,6 +270,7 @@ export default function ProjectDetail() {
     setEditingClaimId(claim.id);
     setEditClaimText(claim.text);
     setEditClaimType(claim.type ?? 'hypothesis');
+    setEditClaimNotes(claim.notes ?? '');
     setEditClaimPageRef(claim.pageRef ?? '');
     setEditClaimError('');
   }
@@ -278,6 +283,7 @@ export default function ProjectDetail() {
       const updated = await updateClaim(editingClaimId!, {
         text:    editClaimText.trim(),
         type:    editClaimType,
+        notes:   editClaimNotes.trim() || null,
         pageRef: editClaimPageRef.trim() || null,
       });
       updateClaimInState(updated);
@@ -513,11 +519,17 @@ export default function ProjectDetail() {
                               className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 resize-none" />
                             {editClaimError && <p className="text-red-500 text-xs mt-1">{editClaimError}</p>}
                           </div>
-                          <div className="mb-4">
+                          <div className="mb-3">
                             <label className="block text-sm text-gray-700 mb-1">Page / line reference</label>
                             <input type="text" value={editClaimPageRef} onChange={e => setEditClaimPageRef(e.target.value)}
                               className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
                               placeholder="e.g. p. 42, line 3" />
+                          </div>
+                          <div className="mb-4">
+                            <label className="block text-sm text-gray-700 mb-1">Notes</label>
+                            <textarea value={editClaimNotes} onChange={e => setEditClaimNotes(e.target.value)} rows={2}
+                              className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 resize-none"
+                              placeholder="Optional personal notes…" />
                           </div>
                           <div className="flex gap-3">
                             <button type="submit" disabled={editClaimSaving}
@@ -542,6 +554,7 @@ export default function ProjectDetail() {
                           )}
                           <p className="text-sm text-gray-800 leading-relaxed">{claim.text}</p>
                           {claim.pageRef && <p className="text-xs text-gray-400 mt-0.5">{claim.pageRef}</p>}
+                          {claim.notes && <p className="text-xs text-gray-500 mt-1 italic">{claim.notes}</p>}
                         </div>
                         <div className="flex gap-3 shrink-0 mt-0.5">
                           <button onClick={() => openEditClaim(claim)}
@@ -573,11 +586,17 @@ export default function ProjectDetail() {
                       placeholder="e.g. Sleep improves declarative memory consolidation" />
                     {claimFormError && <p className="text-red-500 text-xs mt-1">{claimFormError}</p>}
                   </div>
-                  <div className="mb-4">
+                  <div className="mb-3">
                     <label className="block text-sm text-gray-700 mb-1">Page / line reference</label>
                     <input type="text" value={claimPageRef} onChange={e => setClaimPageRef(e.target.value)}
                       className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
                       placeholder="e.g. p. 42, line 3" />
+                  </div>
+                  <div className="mb-4">
+                    <label className="block text-sm text-gray-700 mb-1">Notes</label>
+                    <textarea value={claimNotes} onChange={e => setClaimNotes(e.target.value)} rows={2}
+                      className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 resize-none"
+                      placeholder="Optional personal notes…" />
                   </div>
                   <button type="submit" disabled={claimSubmitting}
                     className="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700 disabled:opacity-50 transition-colors">
@@ -594,10 +613,77 @@ export default function ProjectDetail() {
     );
   }
 
+  function buildExportRows() {
+    const rows: string[][] = [];
+    rows.push(['Paper', 'Authors', 'Year', 'Type', 'Claim', 'Page Ref', 'Notes']);
+    for (const paper of papers) {
+      const claims = claimsByPaper.get(paper.id) ?? [];
+      if (claims.length === 0) {
+        rows.push([paper.title, paper.authors ?? '', paper.year ? String(paper.year) : '', '', '', '', '']);
+      } else {
+        for (const claim of claims) {
+          rows.push([paper.title, paper.authors ?? '', paper.year ? String(paper.year) : '',
+            claim.type ?? '', claim.text, claim.pageRef ?? '', claim.notes ?? '']);
+        }
+      }
+    }
+    return rows;
+  }
+
+  function handleExportMarkdown() {
+    const lines: string[] = [`# ${project?.name ?? 'Project'}\n`];
+    for (const paper of papers) {
+      const meta = [paper.authors, paper.year].filter(Boolean).join(', ');
+      lines.push(`## ${paper.title}${meta ? ` (${meta})` : ''}\n`);
+      if (paper.summary) lines.push(`${paper.summary}\n`);
+      const claims = claimsByPaper.get(paper.id) ?? [];
+      for (const type of CLAIM_TYPES) {
+        const typed = claims.filter(c => c.type === type);
+        if (typed.length === 0) continue;
+        lines.push(`### ${CLAIM_META[type].label}\n`);
+        for (const claim of typed) {
+          lines.push(`- ${claim.text}${claim.pageRef ? ` *(${claim.pageRef})*` : ''}`);
+          if (claim.notes) lines.push(`  > ${claim.notes}`);
+        }
+        lines.push('');
+      }
+    }
+    const blob = new Blob([lines.join('\n')], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${project?.name ?? 'export'}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function handleExportCsv() {
+    const rows = buildExportRows();
+    const csv = rows.map(row => row.map(cell => `"${cell.replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${project?.name ?? 'export'}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   function renderComparisonTab() {
     if (papers.length === 0) return <p className="text-gray-500 text-sm">No papers yet. Add papers in the Papers tab first.</p>;
     return (
-      <div className="overflow-x-auto">
+      <div>
+        <div className="flex justify-end gap-2 mb-4">
+          <button onClick={handleExportMarkdown}
+            className="border border-gray-300 text-gray-600 px-4 py-2 rounded text-sm hover:bg-gray-50 transition-colors">
+            Export Markdown
+          </button>
+          <button onClick={handleExportCsv}
+            className="border border-gray-300 text-gray-600 px-4 py-2 rounded text-sm hover:bg-gray-50 transition-colors">
+            Export CSV
+          </button>
+        </div>
+        <div className="overflow-x-auto">
         <table className="w-full text-sm border-collapse min-w-[640px]">
           <thead>
             <tr className="border-b-2 border-gray-200">
@@ -645,6 +731,7 @@ export default function ProjectDetail() {
             })}
           </tbody>
         </table>
+        </div>
       </div>
     );
   }
@@ -662,7 +749,12 @@ export default function ProjectDetail() {
           ← Back to Projects
         </button>
 
-        {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+        {error && (
+          <div className="flex items-center justify-between bg-red-50 border border-red-200 rounded px-4 py-2 mb-4">
+            <p className="text-red-600 text-sm">{error}</p>
+            <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600 ml-4 text-lg leading-none">×</button>
+          </div>
+        )}
 
         <h1 className="text-2xl font-semibold text-gray-900 mb-1">{project?.name}</h1>
         {project?.description && <p className="text-gray-500 text-sm mb-6">{project.description}</p>}
