@@ -26,6 +26,7 @@ export async function createClaim(data: {
 export async function updateClaim(id: string, data: {
   text?: string;
   type?: import('../types').ClaimType | null;
+  notes?: string | null;
   pageRef?: string | null;
 }): Promise<Claim> {
   const res = await apiFetch(`/claims/${id}`, {

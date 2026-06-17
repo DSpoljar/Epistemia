@@ -126,6 +126,7 @@ export default function Dashboard() {
   }
 
   async function handleDelete(id: string) {
+    if (!window.confirm('Delete this project and all its papers and claims?')) return;
     try {
       await deleteProject(id);
       setProjects(prev => prev.filter(p => p.id !== id));
