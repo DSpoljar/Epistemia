@@ -613,6 +613,23 @@ export default function ProjectDetail() {
     );
   }
 
+  function buildExportRows() {
+    const rows: string[][] = [];
+    rows.push(['Paper', 'Authors', 'Year', 'Type', 'Claim', 'Page Ref', 'Notes']);
+    for (const paper of papers) {
+      const claims = claimsByPaper.get(paper.id) ?? [];
+      if (claims.length === 0) {
+        rows.push([paper.title, paper.authors ?? '', paper.year ? String(paper.year) : '', '', '', '', '']);
+      } else {
+        for (const claim of claims) {
+          rows.push([paper.title, paper.authors ?? '', paper.year ? String(paper.year) : '',
+            claim.type ?? '', claim.text, claim.pageRef ?? '', claim.notes ?? '']);
+        }
+      }
+    }
+    return rows;
+  }
+
   function handleExportMarkdown() {
     const lines: string[] = [`# ${project?.name ?? 'Project'}\n`];
     for (const paper of papers) {
@@ -640,14 +657,30 @@ export default function ProjectDetail() {
     URL.revokeObjectURL(url);
   }
 
+  function handleExportCsv() {
+    const rows = buildExportRows();
+    const csv = rows.map(row => row.map(cell => `"${cell.replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${project?.name ?? 'export'}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   function renderComparisonTab() {
     if (papers.length === 0) return <p className="text-gray-500 text-sm">No papers yet. Add papers in the Papers tab first.</p>;
     return (
       <div>
-        <div className="flex justify-end mb-4">
+        <div className="flex justify-end gap-2 mb-4">
           <button onClick={handleExportMarkdown}
             className="border border-gray-300 text-gray-600 px-4 py-2 rounded text-sm hover:bg-gray-50 transition-colors">
             Export Markdown
+          </button>
+          <button onClick={handleExportCsv}
+            className="border border-gray-300 text-gray-600 px-4 py-2 rounded text-sm hover:bg-gray-50 transition-colors">
+            Export CSV
           </button>
         </div>
         <div className="overflow-x-auto">
@@ -716,7 +749,12 @@ export default function ProjectDetail() {
           ← Back to Projects
         </button>
 
-        {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+        {error && (
+          <div className="flex items-center justify-between bg-red-50 border border-red-200 rounded px-4 py-2 mb-4">
+            <p className="text-red-600 text-sm">{error}</p>
+            <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600 ml-4 text-lg leading-none">×</button>
+          </div>
+        )}
 
         <h1 className="text-2xl font-semibold text-gray-900 mb-1">{project?.name}</h1>
         {project?.description && <p className="text-gray-500 text-sm mb-6">{project.description}</p>}
