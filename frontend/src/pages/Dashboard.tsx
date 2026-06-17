@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Project } from '../types';
-import { listProjects, createProject, deleteProject } from '../api/projects';
+import { listProjects, createProject, updateProject, deleteProject } from '../api/projects';
 import { createPaper, extractFromPdf } from '../api/papers';
 import { logout } from '../api/auth';
 
@@ -24,6 +24,12 @@ export default function Dashboard() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [editingProjectId, setEditingProjectId]   = useState<string | null>(null);
+  const [editProjectName, setEditProjectName]     = useState('');
+  const [editProjectDesc, setEditProjectDesc]     = useState('');
+  const [editProjectSaving, setEditProjectSaving] = useState(false);
+  const [editProjectError, setEditProjectError]   = useState('');
 
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState('');
@@ -91,6 +97,31 @@ export default function Dashboard() {
       setError(e instanceof Error ? e.message : 'Failed to create project.');
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  function openEditProject(project: Project) {
+    setEditingProjectId(project.id);
+    setEditProjectName(project.name);
+    setEditProjectDesc(project.description ?? '');
+    setEditProjectError('');
+  }
+
+  async function handleSaveEditProject(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editProjectName.trim()) { setEditProjectError('Name is required.'); return; }
+    setEditProjectSaving(true);
+    try {
+      const updated = await updateProject(editingProjectId!, {
+        name:        editProjectName.trim(),
+        description: editProjectDesc.trim() || null,
+      });
+      setProjects(prev => prev.map(p => p.id === updated.id ? updated : p));
+      setEditingProjectId(null);
+    } catch (e: unknown) {
+      setEditProjectError(e instanceof Error ? e.message : 'Failed to update project.');
+    } finally {
+      setEditProjectSaving(false);
     }
   }
 
@@ -244,30 +275,55 @@ export default function Dashboard() {
           <p className="text-gray-500 text-sm">No projects yet. Create one to get started.</p>
         ) : (
           <ul className="space-y-3">
-            {projects.map(project => (
-              <li key={project.id} className="bg-white border border-gray-200 rounded p-4 flex items-start justify-between">
-                <div>
-                  <p className="font-medium text-gray-900 text-sm">{project.name}</p>
-                  {project.description && (
-                    <p className="text-gray-500 text-xs mt-1">{project.description}</p>
+            {projects.map(project => {
+              const isEditing = editingProjectId === project.id;
+              return (
+                <li key={project.id} className="bg-white border border-gray-200 rounded p-4">
+                  {isEditing ? (
+                    <form onSubmit={handleSaveEditProject}>
+                      <div className="mb-3">
+                        <label className="block text-sm text-gray-700 mb-1">Name *</label>
+                        <input type="text" value={editProjectName} onChange={e => setEditProjectName(e.target.value)} autoFocus
+                          className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500" />
+                        {editProjectError && <p className="text-red-500 text-xs mt-1">{editProjectError}</p>}
+                      </div>
+                      <div className="mb-4">
+                        <label className="block text-sm text-gray-700 mb-1">Description</label>
+                        <textarea value={editProjectDesc} onChange={e => setEditProjectDesc(e.target.value)} rows={2}
+                          className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 resize-none" />
+                      </div>
+                      <div className="flex gap-3">
+                        <button type="submit" disabled={editProjectSaving}
+                          className="bg-blue-600 text-white px-4 py-1.5 rounded text-sm hover:bg-blue-700 disabled:opacity-50 transition-colors">
+                          {editProjectSaving ? 'Saving…' : 'Save'}
+                        </button>
+                        <button type="button" onClick={() => setEditingProjectId(null)}
+                          className="text-gray-500 text-sm hover:underline">
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
+                  ) : (
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="font-medium text-gray-900 text-sm">{project.name}</p>
+                        {project.description && (
+                          <p className="text-gray-500 text-xs mt-1">{project.description}</p>
+                        )}
+                      </div>
+                      <div className="flex gap-2 ml-4 shrink-0">
+                        <button onClick={() => navigate(`/projects/${project.id}`)}
+                          className="text-blue-600 text-xs hover:underline">Open</button>
+                        <button onClick={() => openEditProject(project)}
+                          className="text-blue-600 text-xs hover:underline">Edit</button>
+                        <button onClick={() => handleDelete(project.id)}
+                          className="text-red-500 text-xs hover:underline">Delete</button>
+                      </div>
+                    </div>
                   )}
-                </div>
-                <div className="flex gap-2 ml-4 shrink-0">
-                  <button
-                    onClick={() => navigate(`/projects/${project.id}`)}
-                    className="text-blue-600 text-xs hover:underline"
-                  >
-                    Open
-                  </button>
-                  <button
-                    onClick={() => handleDelete(project.id)}
-                    className="text-red-500 text-xs hover:underline"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
