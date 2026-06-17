@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import type { Project, Paper, Claim, ClaimType } from '../types';
 import { getProject } from '../api/projects';
 import { listPapers, createPaper, updatePaper, deletePaper, uploadPdf, extractFromPdf } from '../api/papers';
-import { listClaims, createClaim, deleteClaim } from '../api/claims';
+import { listClaims, createClaim, updateClaim, deleteClaim } from '../api/claims';
 
 type Tab = 'papers' | 'summaries' | 'claims' | 'comparison';
 
@@ -54,13 +54,21 @@ export default function ProjectDetail() {
   const [addFormDragging, setAddFormDragging] = useState(false);
   const [cardDraggingId, setCardDraggingId]   = useState<string | null>(null);
 
-  // Claims tab
+  // Claims tab — add form
   const [claimFormPaperId, setClaimFormPaperId] = useState<string | null>(null);
   const [claimType, setClaimType]   = useState<ClaimType>('hypothesis');
   const [claimText, setClaimText]   = useState('');
   const [claimPageRef, setClaimPageRef] = useState('');
   const [claimFormError, setClaimFormError] = useState('');
   const [claimSubmitting, setClaimSubmitting] = useState(false);
+
+  // Claims tab — edit form
+  const [editingClaimId, setEditingClaimId]     = useState<string | null>(null);
+  const [editClaimText, setEditClaimText]       = useState('');
+  const [editClaimType, setEditClaimType]       = useState<ClaimType>('hypothesis');
+  const [editClaimPageRef, setEditClaimPageRef] = useState('');
+  const [editClaimSaving, setEditClaimSaving]   = useState(false);
+  const [editClaimError, setEditClaimError]     = useState('');
 
   useEffect(() => {
     if (!id) return;
@@ -86,6 +94,10 @@ export default function ProjectDetail() {
 
   function removeClaimFromState(claimId: string, paperId: string) {
     setClaimsByPaper(prev => new Map(prev).set(paperId, (prev.get(paperId) ?? []).filter(c => c.id !== claimId)));
+  }
+
+  function updateClaimInState(claim: Claim) {
+    setClaimsByPaper(prev => new Map(prev).set(claim.paperId, (prev.get(claim.paperId) ?? []).map(c => c.id === claim.id ? claim : c)));
   }
 
   // --- Papers tab handlers ---
@@ -247,6 +259,33 @@ export default function ProjectDetail() {
       removeClaimFromState(claimId, paperId);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to delete claim.');
+    }
+  }
+
+  function openEditClaim(claim: Claim) {
+    setEditingClaimId(claim.id);
+    setEditClaimText(claim.text);
+    setEditClaimType(claim.type ?? 'hypothesis');
+    setEditClaimPageRef(claim.pageRef ?? '');
+    setEditClaimError('');
+  }
+
+  async function handleSaveEditClaim(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editClaimText.trim()) { setEditClaimError('Claim text is required.'); return; }
+    setEditClaimSaving(true);
+    try {
+      const updated = await updateClaim(editingClaimId!, {
+        text:    editClaimText.trim(),
+        type:    editClaimType,
+        pageRef: editClaimPageRef.trim() || null,
+      });
+      updateClaimInState(updated);
+      setEditingClaimId(null);
+    } catch (e: unknown) {
+      setEditClaimError(e instanceof Error ? e.message : 'Failed to update claim.');
+    } finally {
+      setEditClaimSaving(false);
     }
   }
 
@@ -455,7 +494,44 @@ export default function ProjectDetail() {
                 <ul className="space-y-2 mb-3">
                   {claims.map(claim => {
                     const meta = claim.type ? CLAIM_META[claim.type] : null;
-                    return (
+                    const isEditingThis = editingClaimId === claim.id;
+                    return isEditingThis ? (
+                      <li key={claim.id} className="bg-white border border-gray-200 rounded p-4">
+                        <form onSubmit={handleSaveEditClaim}>
+                          <div className="mb-3">
+                            <label className="block text-sm text-gray-700 mb-1">Type</label>
+                            <select value={editClaimType} onChange={e => setEditClaimType(e.target.value as ClaimType)}
+                              className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 bg-white">
+                              {CLAIM_TYPES.map(t => (
+                                <option key={t} value={t}>{CLAIM_META[t].label}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div className="mb-3">
+                            <label className="block text-sm text-gray-700 mb-1">Claim text *</label>
+                            <textarea value={editClaimText} onChange={e => setEditClaimText(e.target.value)} rows={3} autoFocus
+                              className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 resize-none" />
+                            {editClaimError && <p className="text-red-500 text-xs mt-1">{editClaimError}</p>}
+                          </div>
+                          <div className="mb-4">
+                            <label className="block text-sm text-gray-700 mb-1">Page / line reference</label>
+                            <input type="text" value={editClaimPageRef} onChange={e => setEditClaimPageRef(e.target.value)}
+                              className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+                              placeholder="e.g. p. 42, line 3" />
+                          </div>
+                          <div className="flex gap-3">
+                            <button type="submit" disabled={editClaimSaving}
+                              className="bg-blue-600 text-white px-4 py-1.5 rounded text-sm hover:bg-blue-700 disabled:opacity-50 transition-colors">
+                              {editClaimSaving ? 'Saving…' : 'Save'}
+                            </button>
+                            <button type="button" onClick={() => setEditingClaimId(null)}
+                              className="text-gray-500 text-sm hover:underline">
+                              Cancel
+                            </button>
+                          </div>
+                        </form>
+                      </li>
+                    ) : (
                       <li key={claim.id}
                         className={`flex items-start gap-3 px-3 py-2.5 rounded border-l-4 ${meta ? `${meta.border} ${meta.bg}` : 'border-gray-300 bg-gray-50'}`}>
                         <div className="flex-1 min-w-0">
@@ -467,8 +543,12 @@ export default function ProjectDetail() {
                           <p className="text-sm text-gray-800 leading-relaxed">{claim.text}</p>
                           {claim.pageRef && <p className="text-xs text-gray-400 mt-0.5">{claim.pageRef}</p>}
                         </div>
-                        <button onClick={() => handleDeleteClaim(claim.id, paper.id)}
-                          className="text-red-400 text-xs hover:underline shrink-0 mt-0.5">Delete</button>
+                        <div className="flex gap-3 shrink-0 mt-0.5">
+                          <button onClick={() => openEditClaim(claim)}
+                            className="text-blue-600 text-xs hover:underline">Edit</button>
+                          <button onClick={() => handleDeleteClaim(claim.id, paper.id)}
+                            className="text-red-400 text-xs hover:underline">Delete</button>
+                        </div>
                       </li>
                     );
                   })}
