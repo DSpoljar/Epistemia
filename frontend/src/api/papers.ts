@@ -38,7 +38,7 @@ export async function getPaper(id: string): Promise<Paper> {
   return res.json();
 }
 
-export async function updatePaper(id: string, data: { summary?: string | null }): Promise<Paper> {
+export async function updatePaper(id: string, data: { summary?: string | null; title?: string; authors?: string | null; year?: number | null }): Promise<Paper> {
   const res = await apiFetch(`/papers/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
