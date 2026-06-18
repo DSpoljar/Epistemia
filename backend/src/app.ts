@@ -26,7 +26,7 @@ export function buildApp(): FastifyInstance {
   app.register(claimRoutes,   { prefix: '/api/claims' });
   app.register(clusterRoutes, { prefix: '/api/clusters' });
 
-  app.get('/health', async () => ({ status: 'ok' }));
+  app.get('/health', async () => ({ status: 'ok', timestamp: new Date().toISOString(), env: process.env.NODE_ENV }));
 
   return app;
 }
