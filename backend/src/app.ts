@@ -1,4 +1,5 @@
 import Fastify, { FastifyInstance } from 'fastify';
+import cors from '@fastify/cors';
 import sensible from '@fastify/sensible';
 import multipart from '@fastify/multipart';
 import { projectRoutes } from './modules/projects/routes';
@@ -11,6 +12,10 @@ import { authenticate } from './plugins/authenticate';
 export function buildApp(): FastifyInstance {
   const app = Fastify({ logger: true });
 
+  app.register(cors, {
+    origin: process.env.FRONTEND_URL ?? true,
+    credentials: true,
+  });
   app.register(sensible);
   app.register(multipart);
 
