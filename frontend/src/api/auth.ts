@@ -1,7 +1,7 @@
-import { setToken, clearToken } from './client';
+import { apiFetch, setToken, clearToken } from './client';
 
 export async function login(email: string, password: string): Promise<void> {
-  const res = await fetch('/api/auth/login', {
+  const res = await apiFetch('/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password }),
