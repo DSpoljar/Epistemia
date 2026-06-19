@@ -20,14 +20,17 @@ export function runMigrations(): void {
       title      TEXT NOT NULL,
       authors    TEXT,
       year       INTEGER,
-      summary    TEXT
+      summary    TEXT,
+      pdf_path   TEXT
     );
 
     CREATE TABLE IF NOT EXISTS claims (
       id       TEXT PRIMARY KEY,
       paper_id TEXT NOT NULL REFERENCES papers(id) ON DELETE CASCADE,
       text     TEXT NOT NULL,
-      notes    TEXT
+      notes    TEXT,
+      type     TEXT,
+      page_ref TEXT
     );
 
     CREATE TABLE IF NOT EXISTS clusters (
