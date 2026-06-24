@@ -7,10 +7,10 @@ import ClustersView from './pages/ClustersView';
 import ClusterDetail from './pages/ClusterDetail';
 import ComparisonView from './pages/ComparisonView';
 import LoginPage from './pages/LoginPage';
-import { getToken } from './api/client';
+import { isAuthenticated } from './api/client';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  if (!getToken()) return <Navigate to="/login" replace />;
+  if (!isAuthenticated()) return <Navigate to="/login" replace />;
   return <>{children}</>;
 }
 
