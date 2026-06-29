@@ -8,10 +8,16 @@ import ClusterDetail from './pages/ClusterDetail';
 import ComparisonView from './pages/ComparisonView';
 import LoginPage from './pages/LoginPage';
 import { isAuthenticated } from './api/client';
+import ChatWidget from './components/ChatWidget';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   if (!isAuthenticated()) return <Navigate to="/login" replace />;
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      <ChatWidget />
+    </>
+  );
 }
 
 const router = createBrowserRouter([
