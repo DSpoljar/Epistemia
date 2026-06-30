@@ -33,6 +33,18 @@ jobs:
         run: npm test
         working-directory: backend
 
+      - name: Check PATCH tests have GET round-trips
+        working-directory: backend
+        run: |
+          FAIL=0
+          for f in $(grep -rl "method: 'PATCH'" src/modules 2>/dev/null); do
+            if ! grep -q "method: 'GET'" "$f"; then
+              echo "Missing GET round-trip in: $f"
+              FAIL=1
+            fi
+          done
+          exit $FAIL
+
       - name: Install frontend dependencies
         run: npm ci
         working-directory: frontend
