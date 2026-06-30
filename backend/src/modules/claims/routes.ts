@@ -27,7 +27,7 @@ const createBodySchema = {
     paperId:  { type: 'string' },
     text:     { type: 'string', minLength: 1 },
     notes:    { type: ['string', 'null'] },
-    type:     { type: ['string', 'null'] },
+    type:     { enum: ['hypothesis', 'limitation', 'methodology', 'implication', null] },
     pageRef:  { type: ['string', 'null'] },
   },
 } as const;
@@ -39,7 +39,7 @@ const updateBodySchema = {
   properties: {
     text:    { type: 'string', minLength: 1 },
     notes:   { type: ['string', 'null'] },
-    type:    { type: ['string', 'null'] },
+    type:    { enum: ['hypothesis', 'limitation', 'methodology', 'implication', null] },
     pageRef: { type: ['string', 'null'] },
   },
 } as const;
